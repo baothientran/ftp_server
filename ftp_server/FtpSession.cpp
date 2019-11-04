@@ -728,7 +728,7 @@ void EPSVCommand::execute(const std::vector<std::string> &args) {
     for (uint16_t port = FtpServerDTP::USABLE_PORT_MAX; port >= FtpServerDTP::USABLE_PORT_MIN; --port) {
         try {
             ftpDTP.setupPassiveMode(port, protocol);
-        } catch (const SocketException &e) {
+        } catch (const SocketException &) {
             continue;
         }
 
