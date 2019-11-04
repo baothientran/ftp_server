@@ -931,6 +931,5 @@ void STORCommand::execute(const std::vector<std::string> &args) {
         ftpDTP.closeDataConnect();
         ftpPI->writeCtrl(REQUESTED_ACTION_ABORTED_LOCAL_ERROR_PROCESSING, "Data connection close local error");
     }
-
 }
 

@@ -94,7 +94,11 @@ std::string Socket::IPAddr() const {
         sockaddr_in6 addr;
         socklen_t len = sizeof(sockaddr_in6);
         getsockname(_impl->sockfd, reinterpret_cast<sockaddr*>(&addr), &len);
-        inet_ntop(AF_INET6, &(addr.sin6_addr), localIp, sizeof(localIp));
+        if (IN6_IS_ADDR_V4MAPPED(&addr.sin6_addr)) {
+            inet_ntop(AF_INET, reinterpret_cast<in_addr *>(addr.sin6_addr.s6_addr + 12), localIp, sizeof(localIp));
+        }
+        else
+            inet_ntop(AF_INET6, &(addr.sin6_addr), localIp, sizeof(localIp));
     }
 
     return std::string(localIp);
@@ -161,7 +165,7 @@ Socket Socket::accept(const Socket &listenSock) {
 
     Socket socket;
     socket._impl->sockfd = sockfd;
-    socket._impl->protocol = listenSock.netProtocol();
+    socket._impl->protocol = peerAddr.ss_family == AF_INET ? IPv4 : IPv6 ;
     return socket;
 }
 
