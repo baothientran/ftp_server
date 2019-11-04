@@ -152,6 +152,10 @@ void FtpServerPI::run() {
     writeCtrl(SERVICE_READY, "Service ready");
 
     while (true) {
+        // check if session is quit
+        if (quit)
+            break;
+
         // poll for any activity
         int res = _impl->ctrlSock.pollForRead(TIME_OUT);
         if (res == 0 || res == -1) {
@@ -191,10 +195,6 @@ void FtpServerPI::run() {
             cmd->second->execute(args);
         else
             writeCtrl(USER_NOT_LOGGED_IN, "Not logged in");
-
-        // check if session is quit
-        if (quit)
-            break;
     }
 }
 
