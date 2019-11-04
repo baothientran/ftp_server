@@ -8,6 +8,7 @@
 #include <algorithm>
 #include <sys/stat.h>
 #include <cstring>
+#include <stdlib.h>
 #include "FtpSession.h"
 #include "Socket.h"
 #include "Utility.h"
@@ -886,14 +887,25 @@ void STORCommand::execute(const std::vector<std::string> &args) {
     auto ftpPI = PI();
     auto &ftpDTP = ftpPI->DTP();
 
-    // open file
+    // get the file to be stored
     std::string nativePath;
-    if (args.size() == 2)
+    if (args.size() == 2) {
         nativePath = convertToNativePath(args[1]);
-    else
+    }
+    else {
         nativePath = convertToNativePath("");
+    }
 
-    std::ofstream file(nativePath);
+    // create temp file to ensure atomic operation when saving file
+    char temp[] = "/tmp/fileXXXXXX";
+    int fd = mkstemp(temp);
+    if (fd == -1) {
+        ftpPI->writeCtrl(REQUESTED_ACTION_ABORTED_LOCAL_ERROR_PROCESSING, "Failed to create file");
+        return;
+    }
+    close(fd);
+
+    std::ofstream file(temp);
     if (!file) {
         ftpPI->writeCtrl(REQUESTED_ACTION_ABORTED_LOCAL_ERROR_PROCESSING, "Failed to create file");
         return;
@@ -920,7 +932,14 @@ void STORCommand::execute(const std::vector<std::string> &args) {
 
     try {
         ftpDTP.readData(file);
+
+        // save temp file and rename it to the file to be saved
         file.flush();
+        if (std::rename(temp, nativePath.c_str()) == -1) {
+            ftpPI->writeCtrl(REQUESTED_ACTION_ABORTED_LOCAL_ERROR_PROCESSING, "Failed to create file");
+            return;
+        }
+
         ftpDTP.closeDataConnect();
         ftpPI->writeCtrl(CLOSE_DATA_CONNECTION_REQUEST_FILE_ACTION_SUCCESS, "Data connection close file sent OK");
 
