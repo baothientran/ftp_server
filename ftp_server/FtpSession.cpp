@@ -37,7 +37,11 @@ static void runFtpUserSession(std::vector<std::thread> &threadlist,
                               Socket socket, std::string accountsFile)
 {
     FtpServerPI ftpPI(std::move(socket), accountsFile);
-    ftpPI.run();
+
+    try {
+        ftpPI.run();
+    } catch (const std::exception &e) {}
+
     std::thread removeThread(removeFtpUSerSession,
                              std::ref(threadlist),
                              std::ref(threadlistMutex),
